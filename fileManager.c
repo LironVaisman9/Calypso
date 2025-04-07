@@ -2,6 +2,7 @@
 #include "stringFunctions.h"
 #include "macros.h"
 #include <string.h>
+#include <stdlib.h>
 
 bool fileExist(char* filePath)
 {
@@ -24,12 +25,12 @@ size_t fileSize(FILE* file)
 char* getFileName(char* filePath)
 {
     char* name = NULL;
-    int slashPosition = findLast(filePath,'\\');
+    int slashPosition = findLast(filePath,'\\') + 1;
     int dotPosition = findLast(filePath,'.');
     if (slashPosition == -1 || dotPosition == -1)
     {
         LOG_ERROR("Could not find '.' or '\\' in the file path");
-        return false;
+        return NULL;
     }
     int length = dotPosition - slashPosition;
     name = (char*)malloc(length + 1);
@@ -49,7 +50,7 @@ char* getFileName(char* filePath)
 char* getFileFormat(char* filePath)
 {
     char* format = NULL;
-    int dotPosition = findLast(filePath,'.');
+    int dotPosition = findLast(filePath,'.') + 1;
     if (dotPosition == -1)
     {
         LOG_ERROR("Could not find '.' for the file format");
@@ -78,7 +79,7 @@ FileObject* createFileObject(char* filePath)
         return NULL;
     }
     FileObject* fileObject = NULL;
-    fileObject = (FileObject*)malloc(sizeof(fileObject));
+    fileObject = (FileObject*)malloc(sizeof(FileObject));
     if (fileObject == NULL)
     {
         LOG_ERROR("Could not allocate memory for file object");
@@ -133,4 +134,29 @@ FileObject* createFileObject(char* filePath)
     }
     strcpy(fileObject->m_path,filePath);
     return fileObject;
+}
+void freeFileObject(FileObject* fileObject)
+{
+    free(fileObject->m_data);
+    free(fileObject->m_format);
+    free(fileObject->m_name);
+    free(fileObject->m_path);
+    if (fileObject->m_file)
+    {
+        fclose(fileObject->m_file);
+    }
+    free(fileObject);
+}
+void printFileObjct(FileObject* FileObject)
+{
+    printf("File path: %s\n",FileObject->m_path);
+    printf("File name: %s\n",FileObject->m_name);
+    printf("File format: %s\n",FileObject->m_format);
+    printf("File size: %lu\n",FileObject->m_size);
+    //printf("File data:\n");
+    //for (size_t i = 0; i < FileObject->m_size; i++)
+    //{
+        //printf("%02X ", FileObject->m_data[i]);
+    //}
+    //printf("\n");
 }

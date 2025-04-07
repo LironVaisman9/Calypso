@@ -7,7 +7,7 @@ bool subString(char* str,char* subStr,int index,int legnth)
 {
     if ((index + legnth) > strlen(str))
     {
-        LOG_ERROR("Sub string is out of rage");
+        LOG_ERROR("Substring is out of rage");
         return false;
     }
     if (index >= strlen(str))

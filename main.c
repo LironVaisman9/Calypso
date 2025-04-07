@@ -3,14 +3,8 @@
 
 int main(int argc,char** argv)
 {
-    char path[] = "app.ae";
-    if (fileExist(path))
-    {
-        printf("yes\n");
-    }
-    else
-    {
-        printf("no\n");
-    }
+    char path[] = "C:\\Users\\453D~1\\Desktop\\2024-03-01 23-07-48.mkv";
+    FileObject* object = createFileObject(path);
+    printFileObjct(object);
     return 0;
 }

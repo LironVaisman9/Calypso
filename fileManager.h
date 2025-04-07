@@ -20,6 +20,7 @@ char* getFileName(char* filePath);
 char* getFileFormat(char* filePath);
 FileObject* createFileObject(char* filePath);
 void freeFileObject(FileObject* fileObject);
+void printFileObjct(FileObject* FileObject);
 
 
 bool fileExist(char* filePath);
