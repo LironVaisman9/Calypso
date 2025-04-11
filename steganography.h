@@ -1,9 +1,15 @@
 #ifndef STEGANOGRAPHY_H
 #define STEGANOGRAPHY_H
 
-void encodeMessage(unsigned char* dest,char* msg);
-void decodeMessage(unsigned char* src,char* dest);
+#include "fileManager.h"
+
 void encode(unsigned char* dest,unsigned char* data);
 void decode(unsigned char* src,unsigned char* dest);
+
+void encodeMessage(FileObject* destFile,char* msg);
+void decodeMessage(FileObject* srcFile,char* dest);
+
+void encodeFile(FileObject* destFile,FileObject* file);
+void decodeFile(FileObject* srcFile,char* path);
 
 #endif

@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "macros.h": "c",
-        "stdlib.h": "c"
+        "stdlib.h": "c",
+        "filemanager.h": "c"
     }
 }

@@ -1,10 +1,11 @@
 #include <stdio.h>
 #include "fileManager.h"
+#include "stringFunctions.h"
 
 int main(int argc,char** argv)
 {
-    char path[] = "C:\\Users\\453D~1\\Desktop\\2024-03-01 23-07-48.mkv";
-    FileObject* object = createFileObject(path);
-    printFileObjct(object);
+    char input[10] = {0};
+    getUserInput(input,10,NULL);
+    printf("%s\n",input);
     return 0;
 }
