@@ -4,6 +4,7 @@
         "stdlib.h": "c",
         "filemanager.h": "c",
         "steganography.h": "c",
-        "stdbool.h": "c"
+        "stdbool.h": "c",
+        "string.h": "c"
     }
 }

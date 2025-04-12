@@ -1,6 +1,7 @@
 #include "fileManager.h"
 #include "stringFunctions.h"
 #include "macros.h"
+#include "imageHelper.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -51,7 +52,7 @@ char* getFileFormat(char* filePath)
 {
     char* format = NULL;
     int dotPosition = findLast(filePath,'.') + 1;
-    if (dotPosition == -1)
+    if (dotPosition == 0)
     {
         LOG_ERROR("Could not find '.' for the file format");
         return NULL;
@@ -78,6 +79,7 @@ char* getFileFormat(char* filePath)
 }
 FileObject* createFileObject(char* filePath)
 {
+    FILE* file = NULL;
     if (!fileExist(filePath))
     {
         LOG_ERROR("File does not exist");
@@ -90,8 +92,8 @@ FileObject* createFileObject(char* filePath)
         LOG_ERROR("Could not allocate memory for file object");
         return NULL;
     }
-    fileObject->m_file = fopen(filePath,READ_WRITE_BINARY);
-    if (fileObject->m_file == NULL)
+    file = fopen(filePath,READ_BINARY);
+    if (file == NULL)
     {
         LOG_ERROR("Could not open the file: %s",filePath);
         free(fileObject);
@@ -101,7 +103,7 @@ FileObject* createFileObject(char* filePath)
     if (fileObject->m_name == NULL)
     {
         LOG_ERROR("Could not get the file's name");
-        fclose(fileObject->m_file);
+        fclose(file);
         free(fileObject);
         return NULL;
     }
@@ -109,28 +111,27 @@ FileObject* createFileObject(char* filePath)
     if (fileObject->m_format == NULL)
     {
         LOG_ERROR("Could not get the file's format");
-        fclose(fileObject->m_file);
+        fclose(file);
         free(fileObject->m_name);
         free(fileObject);
         return NULL;
     }
-    fileObject->m_size = fileSize(fileObject->m_file);
-    fileObject->m_data = (unsigned char*)malloc(fileObject->m_size);
+    fileObject->m_size = fileSize(file);
+    fileObject->m_data = stbi_load(filePath, &fileObject->m_width, &fileObject->m_height, &fileObject->m_channels, 0);
     if (fileObject->m_data == NULL)
     {
-        LOG_ERROR("Could not allocate memory for file's binary data");
-        fclose(fileObject->m_file);
+        LOG_ERROR("Could not load image");
+        fclose(file);
         free(fileObject->m_name);
         free(fileObject->m_format);
         free(fileObject);
         return NULL;
     }
-    fread(fileObject->m_data,fileObject->m_size,1,fileObject->m_file);
     fileObject->m_path = (char*)malloc(strlen(filePath) + 1);
     if (fileObject->m_path == NULL)
     {
         LOG_ERROR("Could not allocate memory for the file's path");
-        fclose(fileObject->m_file);
+        fclose(file);
         free(fileObject->m_name);
         free(fileObject->m_format);
         free(fileObject->m_data);
@@ -138,18 +139,15 @@ FileObject* createFileObject(char* filePath)
         return NULL;
     }
     strcpy(fileObject->m_path,filePath);
+    fclose(file);
     return fileObject;
 }
 void freeFileObject(FileObject* fileObject)
 {
-    free(fileObject->m_data);
+    stbi_image_free(fileObject->m_data);
     free(fileObject->m_format);
     free(fileObject->m_name);
     free(fileObject->m_path);
-    if (fileObject->m_file)
-    {
-        fclose(fileObject->m_file);
-    }
     free(fileObject);
 }
 void printFileObjct(FileObject* FileObject)

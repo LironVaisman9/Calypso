@@ -5,7 +5,7 @@
 #include "fileManager.h"
 
 #define MAGIC_LENGTH 4
-#define HEADER_STARTING_BYTE 100
+#define HEADER_STARTING_BYTE 150
 
 typedef struct Header
 {

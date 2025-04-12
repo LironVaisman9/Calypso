@@ -11,12 +11,14 @@
 
 typedef struct FileObject
 {
-    FILE* m_file;
     char* m_path;
     char* m_name;
     char* m_format;
     size_t m_size;
     unsigned char* m_data;
+    int m_width;
+    int m_height;
+    int m_channels;
 }FileObject;
 
 char* getFileName(char* filePath);

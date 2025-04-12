@@ -170,6 +170,7 @@ bool decodeLSB(unsigned char* src,unsigned char* dest,int startPos,int size)
 
 bool encodeMessage(FileObject* destFile,char* msg)
 {
+    FILE* fileToWrite = NULL;
     unsigned char* binaryMsg = NULL;
     size_t startingPos = findstartingPos(destFile->m_data,destFile->m_size,strlen(msg));
     if (startingPos == 0)
@@ -192,11 +193,6 @@ bool encodeMessage(FileObject* destFile,char* msg)
         LOG_ERROR("Could not create header for the encoding");
         return false;
     }
-    printf("type: %c\n",header->m_type);
-    printf("format: %s\n",header->m_fileFormat);
-    printf("starting pos: %zu\n",header->m_startPos);
-    printf("size: %u\n",header->m_textSize);
-    printf("Header magic: %s\n",header->m_magic);
     if(!insertHeader(destFile->m_data,header))
     {
         LOG_ERROR("Could not insert Header");
@@ -213,9 +209,19 @@ bool encodeMessage(FileObject* destFile,char* msg)
     if (!encodeLSB(destFile->m_data,binaryMsg,startingPos,strlen(msg) + 1))
     {
         LOG_ERROR("Could not encode the binary data into the file");
+        free(binaryMsg);
         return false;
     }
-    fwrite(destFile->m_data,1,destFile->m_size,destFile->m_file);
+    fileToWrite = fopen(destFile->m_path,WRITE_BINARY);
+    if (fileToWrite == NULL)
+    {
+        LOG_ERROR("Could not open file for writing");
+        free(binaryMsg);
+        return false;
+    }
+    fwrite(destFile->m_data,1,destFile->m_size,fileToWrite);
+    fclose(fileToWrite);
+    free(binaryMsg);
     return true;
 }
 bool decodeMessage(FileObject* srcFile,char** msg)
@@ -269,6 +275,7 @@ bool decodeMessage(FileObject* srcFile,char** msg)
 }
 bool encodeFile(FileObject* destFile,FileObject* file)
 {
+    FILE* fileToWrite = NULL;
     uint16_t junkData = (uint16_t)strlen(file->m_path);
     Header* header = createHeader(destFile,'f',file->m_format,junkData,destFile->m_size);
     if (header == NULL)
@@ -295,11 +302,19 @@ bool encodeFile(FileObject* destFile,FileObject* file)
     }
     memcpy(newFileData, destFile->m_data, destFile->m_size);
     memcpy(newFileData + destFile->m_size, file->m_data, file->m_size);
-    fwrite(newFileData,1,newFileSize,destFile->m_file);
+    fileToWrite = fopen(destFile->m_path,WRITE_BINARY);
+    if (fileToWrite == NULL)
+    {
+        LOG_ERROR("Could not open file for writing");
+        free(header);
+        return false;
+    }
+    fwrite(newFileData,1,newFileSize,fileToWrite);
     free(destFile->m_data);
     destFile->m_data = newFileData;
     destFile->m_size = newFileSize;
     free(header);
+    fclose(fileToWrite);
     return true;
 }
 bool decodeFile(FileObject* srcFile,char* path)
