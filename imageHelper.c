@@ -8,6 +8,11 @@
 #include <string.h>
 #include "macros.h"
 
+unsigned char* loadImage(const char* path, int* width, int* height, int* channels)
+{
+    return stbi_load(path, width, height, channels, 0);
+}
+
 bool writeToImage(char* format,char* path, unsigned char* data, int width, int height, int channels)
 {
     if (strcmp(format, "png") == 0 || strcmp(format, "PNG") == 0)
@@ -28,4 +33,8 @@ bool writeToImage(char* format,char* path, unsigned char* data, int width, int h
     }
     LOG_ERROR("'%s' is an unsupported file format",format);
     return false;
+}
+void freeImageData(unsigned char* data)
+{
+    stbi_image_free(data);
 }

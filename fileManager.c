@@ -117,7 +117,7 @@ FileObject* createFileObject(char* filePath)
         return NULL;
     }
     fileObject->m_size = fileSize(file);
-    fileObject->m_data = stbi_load(filePath, &fileObject->m_width, &fileObject->m_height, &fileObject->m_channels, 0);
+    fileObject->m_data = loadImage(filePath, &fileObject->m_width, &fileObject->m_height, &fileObject->m_channels);
     if (fileObject->m_data == NULL)
     {
         LOG_ERROR("Could not load image");
@@ -144,7 +144,7 @@ FileObject* createFileObject(char* filePath)
 }
 void freeFileObject(FileObject* fileObject)
 {
-    stbi_image_free(fileObject->m_data);
+    freeImageData(fileObject->m_data);
     free(fileObject->m_format);
     free(fileObject->m_name);
     free(fileObject->m_path);

@@ -1,6 +1,7 @@
 #include "steganography.h"
 #include "macros.h"
 #include "stringFunctions.h"
+#include "imageHelper.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -219,7 +220,7 @@ bool encodeMessage(FileObject* destFile,char* msg)
         free(binaryMsg);
         return false;
     }
-    fwrite(destFile->m_data,1,destFile->m_size,fileToWrite);
+    writeToImage(destFile->m_format,destFile->m_path,destFile->m_data,destFile->m_width,destFile->m_height,destFile->m_channels);
     fclose(fileToWrite);
     free(binaryMsg);
     return true;
@@ -309,7 +310,7 @@ bool encodeFile(FileObject* destFile,FileObject* file)
         free(header);
         return false;
     }
-    fwrite(newFileData,1,newFileSize,fileToWrite);
+    writeToImage(destFile->m_format,destFile->m_path,newFileData,destFile->m_width,destFile->m_height,destFile->m_channels);
     free(destFile->m_data);
     destFile->m_data = newFileData;
     destFile->m_size = newFileSize;
@@ -371,4 +372,52 @@ bool decodeFile(FileObject* srcFile,char* path)
     free(header);
     free(fileData);
     return true;
+}
+void encode(FileObject* file)
+{
+    int option = 0;
+    do
+    {
+        printf("Encoding options:\n");
+        printf("[1] Encode text\n");
+        printf("[2] Encode file\n");
+        scanf("%d",&option);
+        getchar();
+    } while (option != ENCODE_TEXT && option != ENCODE_FILE);
+    switch (option)
+    {
+    case ENCODE_TEXT:
+        char* text = (char*)malloc(sizeof(char) * (MAX_TEXT_LENGTH));
+        if (text == NULL)
+        {
+            LOG_ERROR("Could not allocate memory for user input");
+            return;
+        }
+        getUserInput(text,MAX_TEXT_LENGTH,"Enter the text that you want to encode: ");
+        encodeMessage(file,text);
+        free(text);
+        break;
+    case ENCODE_FILE:
+        char* path = (char*)malloc(sizeof(char) * (MAX_PATH_LENGTH));
+        if (path == NULL)
+        {
+            LOG_ERROR("Could not allocate memory for user input");
+            return;
+        }
+        getUserInput(path,MAX_PATH_LENGTH,"Enter the path to the file you want to encode: ");
+        FileObject* fileObject = createFileObject(path);
+        if (fileObject == NULL)
+        {
+            LOG_ERROR("Could not create FileObject for the file in: %s",path);
+            free(path);
+            return;
+        }
+        encodeFile(file,fileObject);
+        free(path);
+        freeFileObject(fileObject);
+        break;
+    default:
+        LOG_ERROR("Unsupported option");
+        break;
+    }
 }

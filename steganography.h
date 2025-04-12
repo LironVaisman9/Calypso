@@ -6,6 +6,10 @@
 
 #define MAGIC_LENGTH 4
 #define HEADER_STARTING_BYTE 150
+#define ENCODE_TEXT 1
+#define ENCODE_FILE 2
+#define MAX_TEXT_LENGTH 250
+#define MAX_PATH_LENGTH 256
 
 typedef struct Header
 {
