@@ -16,19 +16,22 @@ typedef struct Header
     size_t m_startPos;
 }Header;
 
+size_t findstartingPos(unsigned char* data,size_t dataSize,uint16_t length);
+
 char* createMagic(FileObject* file);
-Header* createHeader(FileObject* file);
+bool headerValid(Header* header,char* magic);
+Header* createHeader(FileObject* file,char type,char* fileFormat,uint16_t textSize,size_t startingPos);
 
 bool insertHeader(unsigned char* dest,Header* header);
 Header* getHeader(unsigned char* src);
 
-bool encode(unsigned char* dest,unsigned char* data,int startPos,int size);
-bool decode(unsigned char* src,unsigned char* dest,int startPos,int size);
+bool encodeLSB(unsigned char* dest,unsigned char* data,int startPos,int size);
+bool decodeLSB(unsigned char* src,unsigned char* dest,int startPos,int size);
 
-void encodeMessage(FileObject* destFile,char* msg);
-void decodeMessage(FileObject* srcFile,char* msg);
+bool encodeMessage(FileObject* destFile,char* msg);
+bool decodeMessage(FileObject* srcFile,char** msg);
 
-void encodeFile(FileObject* destFile,FileObject* file);
-void decodeFile(FileObject* srcFile,char* path);
+bool encodeFile(FileObject* destFile,FileObject* file);
+bool decodeFile(FileObject* srcFile,char* path);
 
 #endif

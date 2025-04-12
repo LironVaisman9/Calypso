@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void printData(unsigned char* data, int size) 
+void printData(char* data, int size) 
 {
     for (int i = 0; i < size; i++)
     {
@@ -17,13 +17,13 @@ void printData(unsigned char* data, int size)
 
 int main(int argc,char** argv)
 {
-    unsigned char originalData[] = "Testing 03!@@ tesit test testing 5092!@)\\321";
+    char originalData[] = "Testing test yes tes!!!0932 s3";
     int dataSize = strlen((char*)originalData);
-    char path[] = "C:\\Users\\453D~1\\Desktop\\github.png";
+    char path[] = "C:\\Users\\453D~1\\Desktop\\code.png";
     FileObject* object = createFileObject(path);
-    encode(object->m_data,originalData,150,dataSize);
-    unsigned char* decodedData = (unsigned char*)malloc(dataSize);
-    decode(object->m_data,decodedData,150,dataSize);
+    encodeMessage(object,originalData);
+    char* decodedData = (char*)malloc(dataSize);
+    decodeMessage(object,&decodedData);
     printf("Original Data: \n");
     printData(originalData, dataSize);
     printf("Decoded Data: \n");

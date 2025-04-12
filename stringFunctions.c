@@ -85,3 +85,37 @@ void randomString(char* str, size_t length,unsigned int seed, bool nullTerminate
     }
     srand(time(NULL));
 }
+unsigned char* stringToBinary(char* str,size_t length)
+{
+    if (str == NULL || length == 0)
+    {
+        LOG_ERROR("Null string or zero length");
+        return NULL;
+    }
+    unsigned char* bytes = NULL;
+    bytes = (unsigned char*)malloc(length);
+    if (bytes == NULL)
+    {
+        LOG_ERROR("Could not allocate memory for bytes of: %s",str);
+        return NULL;
+    }
+    memcpy(bytes, str,length);
+    return bytes;
+}
+char* binaryToString(unsigned char* binary,size_t length)
+{
+    char* str = NULL;
+    if (binary == NULL || length == 0)
+    {
+        LOG_ERROR("Null binary data or zero length");
+        return NULL;
+    }
+    str = (char*)malloc(length);
+    if (str == NULL)
+    {
+        LOG_ERROR("Could not allocate memory for the str");
+        return NULL;
+    }
+    memcpy(str, binary, length);
+    return str;
+}
