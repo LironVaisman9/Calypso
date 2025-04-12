@@ -1,5 +1,6 @@
 #include "stringFunctions.h"
 #include <string.h>
+#include <time.h>
 #include <stdlib.h>
 #include "macros.h"
 
@@ -61,4 +62,26 @@ int findLast(char* str,char ch)
         }
     }
     return position;
+}
+
+void randomString(char* str, size_t length,unsigned int seed, bool nullTerminate)
+{
+    const char charSet[] = ALPHBET;
+    size_t charSetSize = sizeof(charSet) - 1;
+    size_t i = 0;
+    if (str == NULL || length == 0)
+    {
+        LOG_ERROR("Str or length are empty");
+        return;
+    }
+    srand(seed);
+    for (i = 0; i < length; i++)
+    {
+        str[i] = charSet[rand() % charSetSize];
+    }
+    if (nullTerminate && length > 0) 
+    {
+        str[length - 1] = '\0'; 
+    }
+    srand(time(NULL));
 }

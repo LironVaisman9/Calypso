@@ -57,6 +57,11 @@ char* getFileFormat(char* filePath)
         return NULL;
     }
     int length = strlen(filePath) - dotPosition;
+    if (length > MAX_FORMAT_LENGTH)
+    {
+        LOG_ERROR("The max length of a file format is: %d",MAX_FORMAT_LENGTH);
+        return NULL;
+    }
     format = (char*)malloc(length + 1);
     if (format == NULL)
     {

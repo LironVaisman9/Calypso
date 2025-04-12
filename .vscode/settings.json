@@ -2,6 +2,8 @@
     "files.associations": {
         "macros.h": "c",
         "stdlib.h": "c",
-        "filemanager.h": "c"
+        "filemanager.h": "c",
+        "steganography.h": "c",
+        "stdbool.h": "c"
     }
 }

@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#define MAX_FORMAT_LENGTH 4
 #define READ_BINARY "rb"
 
 typedef struct FileObject
