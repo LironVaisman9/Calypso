@@ -6,6 +6,8 @@
 
 #define MAX_FORMAT_LENGTH 4
 #define READ_BINARY "rb"
+#define WRITE_BINARY "wb"
+#define READ_WRITE_BINARY "w+b"
 
 typedef struct FileObject
 {

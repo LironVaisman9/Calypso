@@ -85,7 +85,7 @@ bool insertHeader(unsigned char* dest,Header* header)
         return false;
     }
     memcpy(binaryHeader, header, sizeof(Header));
-    if(!encode(dest,binaryHeader,HEADER_STARTING_BYTE,sizeof(Header)))
+    if(!encodeLSB(dest,binaryHeader,HEADER_STARTING_BYTE,sizeof(Header)))
     {
         LOG_ERROR("Could not encode header into the image");
         free(binaryHeader);
@@ -104,7 +104,7 @@ Header* getHeader(unsigned char* src)
         LOG_ERROR("Could not allocate memory for binary header");
         return NULL;
     }
-    if (!decode(src,binaryHeader,HEADER_STARTING_BYTE,sizeof(Header)))
+    if (!decodeLSB(src,binaryHeader,HEADER_STARTING_BYTE,sizeof(Header)))
     {
         LOG_ERROR("Could not read steganography from file");
         free(binaryHeader);
@@ -215,6 +215,7 @@ bool encodeMessage(FileObject* destFile,char* msg)
         LOG_ERROR("Could not encode the binary data into the file");
         return false;
     }
+    fwrite(destFile->m_data,1,destFile->m_size,destFile->m_file);
     return true;
 }
 bool decodeMessage(FileObject* srcFile,char** msg)
@@ -226,11 +227,6 @@ bool decodeMessage(FileObject* srcFile,char** msg)
         LOG_ERROR("Could not get header from src file. The file may be not encoded");
         return false;
     }
-    printf("type: %c\n",header->m_type);
-    printf("format: %s\n",header->m_fileFormat);
-    printf("starting pos: %zu\n",header->m_startPos);
-    printf("size: %u\n",header->m_textSize);
-    printf("Header magic: %s\n",header->m_magic);
     char* magic = createMagic(srcFile);
     if (magic == false)
     {
@@ -238,7 +234,6 @@ bool decodeMessage(FileObject* srcFile,char** msg)
         free(header);
         return false;
     }
-    printf("Test magic: %s\n",magic);
     if (!headerValid(header,magic))
     {
         LOG_ERROR("Header is not valid. The file may be not encoded");
@@ -274,5 +269,91 @@ bool decodeMessage(FileObject* srcFile,char** msg)
 }
 bool encodeFile(FileObject* destFile,FileObject* file)
 {
-    //Header* header = create()
+    uint16_t junkData = (uint16_t)strlen(file->m_path);
+    Header* header = createHeader(destFile,'f',file->m_format,junkData,destFile->m_size);
+    if (header == NULL)
+    {
+        LOG_ERROR("Could not create header for the encoding");
+        return false;
+    }
+    if (!insertHeader(destFile->m_data,header))
+    {
+        LOG_ERROR("Could not insert Header");
+        free(header);
+        return false;
+    }
+    printf("%zu\n",destFile->m_size);
+    printf("%zu\n",file->m_size);
+    size_t newFileSize = destFile->m_size + file->m_size;
+    printf("%zu\n",newFileSize);
+    unsigned char* newFileData = (unsigned char*)malloc(newFileSize);
+    if (newFileData == NULL)
+    {
+        LOG_ERROR("Could not allocate memory for the new file data");
+        free(header);
+        return false;
+    }
+    memcpy(newFileData, destFile->m_data, destFile->m_size);
+    memcpy(newFileData + destFile->m_size, file->m_data, file->m_size);
+    fwrite(newFileData,1,newFileSize,destFile->m_file);
+    free(destFile->m_data);
+    destFile->m_data = newFileData;
+    destFile->m_size = newFileSize;
+    free(header);
+    return true;
+}
+bool decodeFile(FileObject* srcFile,char* path)
+{
+    unsigned char* fileData = NULL;
+    char* fullPath = NULL;
+    Header* header = getHeader(srcFile->m_data);
+    if (header == NULL)
+    {
+        LOG_ERROR("Could not get header from src file. The file may be not encoded");
+        return false;
+    }
+    char* magic = createMagic(srcFile);
+    if (magic == false)
+    {
+        LOG_ERROR("Could not create magic for testing header");
+        free(header);
+        return false;
+    }
+    if (!headerValid(header,magic))
+    {
+        LOG_ERROR("Header is not valid. The file may be not encoded");
+        free(header);
+        return false;
+    }
+    free(magic);
+    size_t fileSize = srcFile->m_size - header->m_startPos;
+    printf("%zu",fileSize);
+    fileData = (unsigned char*)malloc(fileSize);
+    if (fileData == NULL)
+    {
+        LOG_ERROR("Could not allocate memory for file data");
+        free(header);
+        return false;
+    }
+    fullPath = combinePath(path,header->m_fileFormat);
+    if (fullPath == NULL)
+    {
+        LOG_ERROR("Could not create full path for the decoded file");
+        free(header);
+        return false;
+    }
+    memcpy(fileData, srcFile->m_data + header->m_startPos, fileSize);
+    FILE* outFile = fopen(fullPath, WRITE_BINARY);
+    if (outFile == NULL)
+    {
+        LOG_ERROR("Could not create file in: %s",fullPath);
+        free(header);
+        free(fileData);
+        return false;
+    }
+    fwrite(fileData, 1, fileSize, outFile);
+    fclose(outFile);
+    free(header);
+    free(fileData);
+    return true;
 }

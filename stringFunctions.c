@@ -119,3 +119,23 @@ char* binaryToString(unsigned char* binary,size_t length)
     memcpy(str, binary, length);
     return str;
 }
+char* combinePath(char* str1,char* str2)
+{
+    char* fullPath = NULL;
+    if (str1 == NULL || str2 == NULL)
+    {
+        LOG_ERROR("The strings must not be NULL");
+        return NULL;
+    }
+    size_t len1 = strlen(str1);
+    size_t len2 = strlen(str2);
+    size_t totalLength = len1 + len2 + 2;
+    fullPath = (char*)malloc(totalLength);
+    if (fullPath == NULL)
+    {
+        LOG_ERROR("Could not allocate memory for full path");
+        return NULL;
+    }
+    snprintf(fullPath, totalLength, "%s.%s", str1, str2);
+    return fullPath;
+}

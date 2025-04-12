@@ -12,5 +12,6 @@ int findLast(char* str,char ch);
 void randomString(char* str, size_t length,unsigned int seed, bool nullTerminate);
 unsigned char* stringToBinary(char* str,size_t length);
 char* binaryToString(unsigned char* binary,size_t length);
+char* combinePath(char* str1,char* str2);
 
 #endif

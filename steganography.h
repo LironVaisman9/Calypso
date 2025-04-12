@@ -34,4 +34,7 @@ bool decodeMessage(FileObject* srcFile,char** msg);
 bool encodeFile(FileObject* destFile,FileObject* file);
 bool decodeFile(FileObject* srcFile,char* path);
 
+void encode(FileObject* file);
+void decode(FileObject* file);
+
 #endif

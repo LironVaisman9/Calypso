@@ -90,7 +90,7 @@ FileObject* createFileObject(char* filePath)
         LOG_ERROR("Could not allocate memory for file object");
         return NULL;
     }
-    fileObject->m_file = fopen(filePath,READ_BINARY);
+    fileObject->m_file = fopen(filePath,READ_WRITE_BINARY);
     if (fileObject->m_file == NULL)
     {
         LOG_ERROR("Could not open the file: %s",filePath);
