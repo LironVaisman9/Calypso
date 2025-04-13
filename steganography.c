@@ -43,20 +43,12 @@ char* createMagic(FileObject* file)
 
 bool headerValid(Header* header,char* magic)
 {
-    if (strcmp(header->m_magic,magic) != 0)
-    {
-        return false;
-    }
-    if (!(header->m_type == 't' || header->m_type == 'f'))
-    {
-        return false;
-    }
-    return true;
+    return strcmp(header->m_magic,magic) == 0;
 }
 
-Header* createHeader(FileObject* file,char type,char* fileFormat,uint16_t textSize,size_t startingPos)
+Header* createHeader(FileObject* file,uint16_t textSize,size_t startingPos)
 {
-    Header* header = (Header*)malloc(sizeof(header));
+    Header* header = (Header*)malloc(sizeof(Header));
     if (header == NULL)
     {
         LOG_ERROR("Could not allocate memory for the header");
@@ -70,8 +62,6 @@ Header* createHeader(FileObject* file,char type,char* fileFormat,uint16_t textSi
     }
     strcpy(header->m_magic,magic);
     free(magic);
-    header->m_type = type;
-    strcpy(header->m_fileFormat,fileFormat);
     header->m_textSize = textSize;
     header->m_startPos = startingPos;
     return header;
@@ -121,6 +111,45 @@ Header* getHeader(unsigned char* src)
     memcpy(header, binaryHeader, sizeof(Header));
     free(binaryHeader);
     return header;
+}
+bool tailValid(Tail* tail,char* magic)
+{
+    return strcmp(tail->m_magic,magic) == 0;
+}
+Tail* getTail(unsigned char* src,size_t size)
+{
+    Tail* tail = NULL;
+    unsigned char* tailPos = src + size - sizeof(Tail);
+    tail = (Tail*)malloc(sizeof(Tail));
+    if (tail == NULL)
+    {
+        LOG_ERROR("Could not allocate memory for tail");
+        return NULL;
+    }
+    memcpy(tail, tailPos, sizeof(Tail));
+    return tail;
+}
+Tail* createTail(FileObject* file,char* format,size_t offset,size_t size)
+{
+    Tail* tail = (Tail*)malloc(sizeof(Tail));
+    if (tail == NULL)
+    {
+        LOG_ERROR("Could not allocate memory for tail");
+        return NULL;
+    }
+    char* magic = createMagic(file);
+    if (magic == NULL)
+    {
+        LOG_ERROR("Could not create magic for tail");
+        free(tail);
+        return NULL;
+    }
+    strcpy(tail->m_magic,magic);
+    free(magic);
+    strcpy(tail->m_format,format);
+    tail->m_offset = offset;
+    tail->m_size = size;
+    return tail;
 }
 bool encodeLSB(unsigned char* dest,unsigned char* data,int startPos,int size)
 {
@@ -186,7 +215,7 @@ bool encodeMessage(FileObject* destFile,char* msg)
     }
     unsigned int seed = (unsigned int)strlen(destFile->m_format);
     randomString(junkData,MAX_FORMAT_LENGTH,seed,true);
-    Header* header = createHeader(destFile,'t',junkData,strlen(msg),startingPos);
+    Header* header = createHeader(destFile,strlen(msg),startingPos);
     free(junkData);
     if (header == NULL)
     {
@@ -272,93 +301,118 @@ bool decodeMessage(FileObject* srcFile,char** msg)
 }
 bool encodeFile(FileObject* destFile,FileObject* file)
 {
-    FILE* fileToWrite = NULL;
-    uint16_t junkData = (uint16_t)strlen(file->m_path);
-    Header* header = createHeader(destFile,'f',file->m_format,junkData,destFile->m_size);
-    if (header == NULL)
-    {
-        LOG_ERROR("Could not create header for the encoding");
-        return false;
-    }
-    if (!insertHeader(destFile->m_data,header))
-    {
-        LOG_ERROR("Could not insert Header");
-        free(header);
-        return false;
-    }
-    if(!writeToImage(destFile->m_format,destFile->m_path,destFile->m_data,destFile->m_width,destFile->m_height,destFile->m_channels))
-    {
-        LOG_ERROR("Could not write new data to image");
-        free(header);
-        return false;
-    }
+    Tail* tail = NULL;
+    unsigned char* dataToEncode = NULL;
     FILE* out = fopen(destFile->m_path,APPEND_BINARY);
     if (out == NULL)
     {
         LOG_ERROR("Could not open file in: %s",destFile->m_path);
-        free(header);
         return false;
     }
-    fwrite(file->m_data, 1, file->m_size, out);
+    dataToEncode = (unsigned char*)malloc(file->m_size);
+    if (dataToEncode == NULL)
+    {
+        LOG_ERROR("Could not allocate memory for the data that will be encoded");
+        fclose(out);
+        return false;
+    }
+    FILE* in = fopen(file->m_path,READ_BINARY);
+    if (in == NULL)
+    {
+        LOG_ERROR("Could not opem file in: %s",file->m_path);
+        free(dataToEncode);
+        fclose(out);
+        return false;
+    }
+    fread(dataToEncode,file->m_size,1,in);
+    fclose(in);
+    fwrite(dataToEncode, 1, file->m_size, out);
+    free(dataToEncode);
+    tail = createTail(destFile,file->m_format,destFile->m_size,file->m_size,file->m_width,file->m_height,file->m_channels);
+    if (tail == NULL)
+    {
+        LOG_ERROR("Could not allocate memory for tail");
+        fclose(out);
+        return false;
+    }
+    fwrite(tail, sizeof(Tail), 1, out);
+    printf("%s\n",tail->m_magic);
     fclose(out);
-    free(header);
-    fclose(fileToWrite);
+    free(tail);
     return true;
 }
 bool decodeFile(FileObject* srcFile,char* path)
 {
+    Tail* tail = NULL;
+    unsigned char* decodedData = NULL;
     unsigned char* fileData = NULL;
-    char* fullPath = NULL;
-    Header* header = getHeader(srcFile->m_data);
-    if (header == NULL)
+    FILE* file = fopen(srcFile->m_path,READ_BINARY);
+    if (file == NULL)
     {
-        LOG_ERROR("Could not get header from src file. The file may be not encoded");
+        LOG_ERROR("Could not open file in: %s",srcFile->m_path);
         return false;
     }
-    char* magic = createMagic(srcFile);
-    if (magic == false)
-    {
-        LOG_ERROR("Could not create magic for testing header");
-        free(header);
-        return false;
-    }
-    if (!headerValid(header,magic))
-    {
-        LOG_ERROR("Header is not valid. The file may be not encoded");
-        free(header);
-        return false;
-    }
-    free(magic);
-    size_t fileSize = srcFile->m_size - header->m_startPos;
-    printf("%zu\n",header->m_startPos);
-    printf("%zu",srcFile->m_size);
-    fileData = (unsigned char*)malloc(fileSize);
+    fileData = (unsigned char*)malloc(srcFile->m_size);
     if (fileData == NULL)
     {
         LOG_ERROR("Could not allocate memory for file data");
-        free(header);
+        fclose(file);
         return false;
     }
-    fullPath = combinePath(path,header->m_fileFormat);
-    if (fullPath == NULL)
+    fread(fileData,srcFile->m_size,1,file);
+    fclose(file);
+    tail = getTail(fileData,srcFile->m_size);
+    if (tail == NULL)
     {
-        LOG_ERROR("Could not create full path for the decoded file");
-        free(header);
-        return false;
-    }
-    memcpy(fileData, srcFile->m_data + header->m_startPos, fileSize);
-    FILE* out = fopen(fullPath,WRITE_BINARY);
-    if (out == NULL)
-    {
-        LOG_ERROR("Could not create new file in: %s",fullPath);
-        free(header);
+        LOG_ERROR("Could not get tail. file may not be encoded");
         free(fileData);
         return false;
     }
-    fwrite(fileData, 1, fileSize, out);
-    fclose(out);
-    free(header);
+    char* magic = createMagic(srcFile);
+    if (magic == NULL)
+    {
+        LOG_ERROR("Could not create magic for testing");
+        free(fileData);
+        return false;
+    }
+    printf("%s\n",magic);
+    printf("%s\n",tail->m_magic);
+    if (!tailValid(tail,magic))
+    {
+        LOG_ERROR("Tail is not valid. file may not be encoded");
+        free(fileData);
+        free(magic);
+        return false;
+    }
+    free(magic);
+    decodedData = (unsigned char*)malloc(tail->m_size);
+    if (decodedData == NULL)
+    {
+        LOG_ERROR("Could not allocate memory for decoded file data");
+        free(fileData);
+        return false;
+    }
+    memcpy(decodedData, fileData + tail->m_offset, tail->m_size);
+    char* fullPath = combinePath(path,tail->m_format);
+    if (fullPath == NULL)
+    {
+        LOG_ERROR("Could not create full path for decoded file");
+        free(fileData);
+        return false;
+    }
     free(fileData);
+    FILE* out = fopen(fullPath,WRITE_BINARY);
+    if (out == NULL)
+    {
+        LOG_ERROR("Could not create file in: %s",fullPath);
+        free(fullPath);
+        return false;
+    }
+    printf("%zu",tail->m_offset);
+    fwrite(decodedData,tail->m_size,1,out);
+    free(fullPath);
+    fclose(out);
+    free(decodedData);
     return true;
 }
 void encode(FileObject* file)

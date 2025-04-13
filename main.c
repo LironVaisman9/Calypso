@@ -24,8 +24,8 @@ int main(int argc,char** argv)
     char path3[] = "C:\\Users\\453D~1\\Desktop\\res";
     FileObject* object = createFileObject(path);
     FileObject* object2 = createFileObject(path2);
-    decodeFile(object,path3);
     //encodeFile(object,object2);
+    decodeFile(object,path3);
     //encodeMessage(object,originalData);
     //char* decodedData = (char*)malloc(dataSize);
     //decodeMessage(object,&decodedData);
