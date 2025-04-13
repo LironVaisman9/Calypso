@@ -328,7 +328,7 @@ bool encodeFile(FileObject* destFile,FileObject* file)
     fclose(in);
     fwrite(dataToEncode, 1, file->m_size, out);
     free(dataToEncode);
-    tail = createTail(destFile,file->m_format,destFile->m_size,file->m_size,file->m_width,file->m_height,file->m_channels);
+    tail = createTail(destFile,file->m_format,destFile->m_size,file->m_size);
     if (tail == NULL)
     {
         LOG_ERROR("Could not allocate memory for tail");
@@ -336,7 +336,6 @@ bool encodeFile(FileObject* destFile,FileObject* file)
         return false;
     }
     fwrite(tail, sizeof(Tail), 1, out);
-    printf("%s\n",tail->m_magic);
     fclose(out);
     free(tail);
     return true;
@@ -375,8 +374,6 @@ bool decodeFile(FileObject* srcFile,char* path)
         free(fileData);
         return false;
     }
-    printf("%s\n",magic);
-    printf("%s\n",tail->m_magic);
     if (!tailValid(tail,magic))
     {
         LOG_ERROR("Tail is not valid. file may not be encoded");
@@ -408,11 +405,74 @@ bool decodeFile(FileObject* srcFile,char* path)
         free(fullPath);
         return false;
     }
-    printf("%zu",tail->m_offset);
     fwrite(decodedData,tail->m_size,1,out);
     free(fullPath);
     fclose(out);
     free(decodedData);
+    return true;
+}
+bool hasHeader(FileObject* file)
+{
+    Header* header = getHeader(file->m_data);
+    if (header == NULL)
+    {
+        return false;
+    }
+    char* magic = createMagic(file);
+    if (magic == NULL)
+    {
+        LOG_ERROR("Could not create magic for testing");
+        free(header);
+        return false;
+    }
+    if (!headerValid(header,magic))
+    {
+        free(header);
+        free(magic);
+        return false;
+    }
+    free(header);
+    free(magic);
+    return true;
+}
+bool hasTail(FileObject* file)
+{
+    FILE* in = fopen(file->m_path,READ_BINARY);
+    if (in == NULL)
+    {
+        LOG_ERROR("Could not open file in: %s",file->m_path);
+        return false;
+    }
+    unsigned char* data = (unsigned char*)malloc(file->m_size);
+    if (data == NULL)
+    {
+        LOG_ERROR("Could not allocate memory for testing data");
+        fclose(in);
+        return false;
+    }
+    fread(data,file->m_size,1,in);
+    Tail* tail = getTail(data,file->m_size);
+    free(data);
+    fclose(in);
+    if (tail == NULL)
+    {
+        return false;
+    }
+    char* magic = createMagic(file);
+    if (magic == NULL)
+    {
+        LOG_ERROR("Could not create magic for testing");
+        free(tail);
+        return false;
+    }
+    if (!tailValid(tail,magic))
+    {
+        free(tail);
+        free(magic);
+        return false;
+    }
+    free(tail);
+    free(magic);
     return true;
 }
 void encode(FileObject* file)
@@ -435,7 +495,12 @@ void encode(FileObject* file)
             LOG_ERROR("Could not allocate memory for user input");
             return;
         }
-        getUserInput(text,MAX_TEXT_LENGTH,"Enter the text that you want to encode: ");
+        if(!getUserInput(text,MAX_TEXT_LENGTH,"Enter the text that you want to encode: "))
+        {
+            LOG_ERROR("Could not get user input");
+            free(text);
+            return;
+        }
         if(!encodeMessage(file,text))
         {
             LOG_ERROR("Could not encode message");
@@ -449,7 +514,12 @@ void encode(FileObject* file)
             LOG_ERROR("Could not allocate memory for user input");
             return;
         }
-        getUserInput(path,MAX_PATH_LENGTH,"Enter the path to the file you want to encode: ");
+        if(!getUserInput(path,MAX_PATH_LENGTH,"Enter the path to the file you want to encode: "))
+        {
+            LOG_ERROR("Could not get user input");
+            free(path);
+            return;
+        }
         FileObject* fileObject = createFileObject(path);
         if (fileObject == NULL)
         {
@@ -468,4 +538,42 @@ void encode(FileObject* file)
         LOG_ERROR("Unsupported option");
         break;
     }
+}
+void decode(FileObject* file)
+{
+    if (hasHeader(file))
+    {
+        char* msg = NULL;
+        if(!decodeMessage(file,&msg))
+        {
+            LOG_ERROR("Failed to decode message");
+            return;
+        }
+        printf("%s\n",msg);
+        free(msg);
+        return;
+    }
+    else if(hasTail(file))
+    {
+        char* path = NULL;
+        path = (char*)malloc(sizeof(char) * MAX_PATH_LENGTH);
+        if (path == NULL)
+        {
+            LOG_ERROR("Could not allocate memory for path for the decoded file");
+            return;
+        }
+        if(!getUserInput(path,MAX_PATH_LENGTH,"Enter path where the file will be saved(include a name for the file): "))
+        {
+            LOG_ERROR("Could not get user input");
+            free(path);
+            return;
+        }
+        if(!decodeFile(file,path))
+        {
+            LOG_ERROR("Failed to decode file");
+        }
+        free(path);
+        return;
+    }
+    LOG_ERROR("File is not encoded");
 }

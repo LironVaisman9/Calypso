@@ -150,16 +150,3 @@ void freeFileObject(FileObject* fileObject)
     free(fileObject->m_path);
     free(fileObject);
 }
-void printFileObjct(FileObject* FileObject)
-{
-    printf("File path: %s\n",FileObject->m_path);
-    printf("File name: %s\n",FileObject->m_name);
-    printf("File format: %s\n",FileObject->m_format);
-    printf("File size: %lu\n",FileObject->m_size);
-    //printf("File data:\n");
-    //for (size_t i = 0; i < FileObject->m_size; i++)
-    //{
-        //printf("%02X ", FileObject->m_data[i]);
-    //}
-    //printf("\n");
-}

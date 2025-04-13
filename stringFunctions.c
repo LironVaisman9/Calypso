@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include "macros.h"
 
-void getUserInput(char* input,size_t maxLength,const char* text)
+bool getUserInput(char* input,size_t maxLength,const char* text)
 {
     if (text != NULL)
     {
@@ -14,18 +14,19 @@ void getUserInput(char* input,size_t maxLength,const char* text)
     if (temp == NULL)
     {
         LOG_ERROR("Could not allocate memory for temp string");
-        return;
+        return false;
     }
     fgets(temp,maxLength + 1,stdin);
     if (strchr(temp, '\n') == NULL)
     {
         LOG_ERROR("Maximum input length is: %zu",maxLength);
         free(temp);
-        return;
+        return false;
     }
     temp[strcspn(temp,"\n")] = '\0';
     strcpy(input,temp);
     free(temp);
+    return true;
 }
 
 bool subString(char* str,char* subStr,int index,int legnth)
@@ -110,13 +111,14 @@ char* binaryToString(unsigned char* binary,size_t length)
         LOG_ERROR("Null binary data or zero length");
         return NULL;
     }
-    str = (char*)malloc(length);
+    str = (char*)malloc(length + 1);  
     if (str == NULL)
     {
         LOG_ERROR("Could not allocate memory for the str");
         return NULL;
     }
     memcpy(str, binary, length);
+    str[length] = '\0'; 
     return str;
 }
 char* combinePath(char* str1,char* str2)
