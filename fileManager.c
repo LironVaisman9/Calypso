@@ -5,6 +5,9 @@
 #include <string.h>
 #include <stdlib.h>
 
+/// @brief checks if the file exists
+/// @param filePath the path to the file
+/// @return true if yes and false if no
 bool fileExist(char* filePath)
 {
     FILE* file = fopen(filePath,READ_BINARY);
@@ -15,6 +18,9 @@ bool fileExist(char* filePath)
     fclose(file);
     return true;
 }
+/// @brief gets the size of a file
+/// @param file the file
+/// @return the size of the file
 size_t fileSize(FILE* file)
 {
     size_t size = 0;
@@ -23,6 +29,9 @@ size_t fileSize(FILE* file)
     fseek(file, 0, SEEK_SET);
     return size;
 }
+/// @brief gets file name from its path
+/// @param filePath the file's path
+/// @return the file's name
 char* getFileName(char* filePath)
 {
     char* name = NULL;
@@ -48,6 +57,9 @@ char* getFileName(char* filePath)
     }
     return name;
 }
+/// @brief gets a file's format from its path
+/// @param filePath the file path
+/// @return the file's format
 char* getFileFormat(char* filePath)
 {
     char* format = NULL;
@@ -77,6 +89,9 @@ char* getFileFormat(char* filePath)
     }
     return format;
 }
+/// @brief creates the file object
+/// @param filePath the path to the file
+/// @return pointer to the file object
 FileObject* createFileObject(char* filePath)
 {
     FILE* file = NULL;
@@ -117,6 +132,7 @@ FileObject* createFileObject(char* filePath)
         return NULL;
     }
     fileObject->m_size = fileSize(file);
+    //Uncompressing the image if needed(for formats like png)
     fileObject->m_data = loadImage(filePath, &fileObject->m_width, &fileObject->m_height, &fileObject->m_channels);
     if (fileObject->m_data == NULL)
     {
@@ -142,6 +158,8 @@ FileObject* createFileObject(char* filePath)
     fclose(file);
     return fileObject;
 }
+/// @brief free all allocated memory for a file object
+/// @param fileObject pointer to a file object
 void freeFileObject(FileObject* fileObject)
 {
     freeImageData(fileObject->m_data);

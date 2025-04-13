@@ -5,6 +5,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+/// @brief finds a random starting position for LSB encoding
+/// @param data the binary data of a file
+/// @param dataSize the size of the binary data
+/// @param length the length of the txt that will be encoded
+/// @return the starting position
 size_t findstartingPos(unsigned char* data,size_t dataSize,uint16_t length)
 {
     size_t startingPos = 0;
@@ -26,7 +31,9 @@ size_t findstartingPos(unsigned char* data,size_t dataSize,uint16_t length)
     startingPos = minStartingPos + rand() % range;
     return startingPos;
 }
-
+/// @brief creates a magic signature
+/// @param file the file that the magic will be based on
+/// @return the magic signature
 char* createMagic(FileObject* file)
 {
     char* magic = NULL;
@@ -40,12 +47,19 @@ char* createMagic(FileObject* file)
     randomString(magic,MAGIC_LENGTH + 1,seed,true);
     return magic;
 }
-
+/// @brief checks if a header is valid
+/// @param header the header
+/// @param magic the magic signature of the file
+/// @return true if yes and false if no
 bool headerValid(Header* header,char* magic)
 {
     return strcmp(header->m_magic,magic) == 0;
 }
-
+/// @brief creates an header for LSB encoding
+/// @param file the file that the header will be based on
+/// @param textSize the size of the text that will be encoded
+/// @param startingPos the starting position of the LSB encoding
+/// @return the header
 Header* createHeader(FileObject* file,uint16_t textSize,size_t startingPos)
 {
     Header* header = (Header*)malloc(sizeof(Header));
@@ -66,7 +80,10 @@ Header* createHeader(FileObject* file,uint16_t textSize,size_t startingPos)
     header->m_startPos = startingPos;
     return header;
 }
-
+/// @brief insert header into binary data
+/// @param dest the binary data of the dest file
+/// @param header the header
+/// @return true if process was successful and false if no
 bool insertHeader(unsigned char* dest,Header* header)
 {
     unsigned char* binaryHeader = (unsigned char*)malloc(sizeof(Header));
@@ -85,6 +102,9 @@ bool insertHeader(unsigned char* dest,Header* header)
     free(binaryHeader);
     return true;
 }
+/// @brief gets a header from binary data if it exists
+/// @param src the binary data
+/// @return the header(NULL if it was not found)
 Header* getHeader(unsigned char* src)
 {
     Header* header = NULL;
@@ -112,10 +132,18 @@ Header* getHeader(unsigned char* src)
     free(binaryHeader);
     return header;
 }
+/// @brief checks if a tail is valid
+/// @param tail the tail
+/// @param magic the magic signature of the file
+/// @return true if the tail is valid and false if no
 bool tailValid(Tail* tail,char* magic)
 {
     return strcmp(tail->m_magic,magic) == 0;
 }
+/// @brief gets a tail from binary data if it exists
+/// @param src the binary data
+/// @param size the size of the binary data
+/// @return the tail(NULL if it was not found)
 Tail* getTail(unsigned char* src,size_t size)
 {
     Tail* tail = NULL;
@@ -129,6 +157,12 @@ Tail* getTail(unsigned char* src,size_t size)
     memcpy(tail, tailPos, sizeof(Tail));
     return tail;
 }
+/// @brief creates a tail for file encoding
+/// @param file the file that the tail will be based on
+/// @param format the format of the file that will be encoded
+/// @param offset the offset to the start of the file
+/// @param size the size of the file that will be encoded
+/// @return the tail
 Tail* createTail(FileObject* file,char* format,size_t offset,size_t size)
 {
     Tail* tail = (Tail*)malloc(sizeof(Tail));
@@ -151,6 +185,12 @@ Tail* createTail(FileObject* file,char* format,size_t offset,size_t size)
     tail->m_size = size;
     return tail;
 }
+/// @brief encodes binary data using LSB encoding
+/// @param dest the dest binary data
+/// @param data the binary data that will be encoded
+/// @param startPos the starting position of the encoding
+/// @param size the size of the binary data that will be encoded
+/// @return true if the process was successful and false if no
 bool encodeLSB(unsigned char* dest,unsigned char* data,int startPos,int size)
 {
     int bitsWritten = 0;
@@ -161,6 +201,7 @@ bool encodeLSB(unsigned char* dest,unsigned char* data,int startPos,int size)
         int bit = 0;
         for (bit = 7; bit >= 0; bit--)
         {
+            //Writes the bit into the LSB of the spesific byte
             int bitToWrite = (byte >> bit) & 1;
             dest[startPos + bitsWritten] &= 0xFE;
             dest[startPos + bitsWritten] |= bitToWrite;
@@ -174,6 +215,12 @@ bool encodeLSB(unsigned char* dest,unsigned char* data,int startPos,int size)
     }
     return true;
 }
+/// @brief decodes binary data that was encoded using LSB encoding
+/// @param src the binary data where the binary is hidden
+/// @param dest where the binary data will be saved
+/// @param startPos the starting position of the encoding
+/// @param size the size of the binary data that was encoded
+/// @return true if the process was successful and false if no
 bool decodeLSB(unsigned char* src,unsigned char* dest,int startPos,int size)
 {
     int bitsRead = 0;
@@ -182,6 +229,7 @@ bool decodeLSB(unsigned char* src,unsigned char* dest,int startPos,int size)
     {
         unsigned char byte = 0;
         int bit = 0;
+        //Reads one LSB from every byte into the dest
         for (bit = 7; bit >= 0; bit--)
         {
             int bitFromSrc = src[startPos + bitsRead] & 1;
@@ -197,7 +245,10 @@ bool decodeLSB(unsigned char* src,unsigned char* dest,int startPos,int size)
     }
     return true;
 }
-
+/// @brief encodes a message into a file using LSB encoding
+/// @param destFile the file that will hide the message
+/// @param msg the message that will be encoded
+/// @return true if the process was successful and false if no
 bool encodeMessage(FileObject* destFile,char* msg)
 {
     unsigned char* binaryMsg = NULL;
@@ -250,6 +301,10 @@ bool encodeMessage(FileObject* destFile,char* msg)
     free(binaryMsg);
     return true;
 }
+/// @brief decodes a message that was hidden using LSB encoding
+/// @param srcFile the file where the msg is hidden
+/// @param msg pointer to char* where the message will be saved
+/// @return true if the process was successful and false if no
 bool decodeMessage(FileObject* srcFile,char** msg)
 {
     unsigned char* binaryMsg = NULL;
@@ -299,6 +354,10 @@ bool decodeMessage(FileObject* srcFile,char** msg)
     free(binaryMsg);
     return true;
 }
+/// @brief encodes a file into the end of a image
+/// @param destFile the image that will hide the file
+/// @param file the file that will be encoded
+/// @return true if the process was successful and false if no
 bool encodeFile(FileObject* destFile,FileObject* file)
 {
     Tail* tail = NULL;
@@ -340,6 +399,10 @@ bool encodeFile(FileObject* destFile,FileObject* file)
     free(tail);
     return true;
 }
+/// @brief decodes a file that was hidden in the end of a image
+/// @param srcFile the image that hides the file
+/// @param path path to where the file will be saved
+/// @return true if the process was successful and false if no
 bool decodeFile(FileObject* srcFile,char* path)
 {
     Tail* tail = NULL;
@@ -411,6 +474,9 @@ bool decodeFile(FileObject* srcFile,char* path)
     free(decodedData);
     return true;
 }
+/// @brief cehcks if a file has LSB encoding header
+/// @param file the file
+/// @return true if it has and false if no
 bool hasHeader(FileObject* file)
 {
     Header* header = getHeader(file->m_data);
@@ -435,6 +501,9 @@ bool hasHeader(FileObject* file)
     free(magic);
     return true;
 }
+/// @brief checks if a file has tail of file encoding
+/// @param file the file
+/// @return true if yes and false if no
 bool hasTail(FileObject* file)
 {
     FILE* in = fopen(file->m_path,READ_BINARY);
@@ -475,6 +544,8 @@ bool hasTail(FileObject* file)
     free(magic);
     return true;
 }
+/// @brief encodes data into a file based on user input
+/// @param file the file
 void encode(FileObject* file)
 {
     int option = 0;
@@ -539,6 +610,8 @@ void encode(FileObject* file)
         break;
     }
 }
+/// @brief decodes data from a file based on user input
+/// @param file the file
 void decode(FileObject* file)
 {
     if (hasHeader(file))

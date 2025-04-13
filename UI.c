@@ -4,6 +4,7 @@
 #include "steganography.h"
 #include <string.h>
 
+//prints the Calypso use manuel
 void printManuel()
 {
     printf("Welcome to Calypso!\n");
@@ -11,6 +12,9 @@ void printManuel()
     printf("-e to encode into a file\n");
     printf("-d to decode from a file\n");
 }
+/// @brief handles the Calypso.exe parameters
+/// @param argc argument count
+/// @param argv list of argument
 void handleExe(int argc,char** argv)
 {
     if (argc != 3 || ((strcmp(argv[1],"-e") != 0) && strcmp(argv[1],"-d") != 0))

@@ -4,6 +4,11 @@
 #include <stdlib.h>
 #include "macros.h"
 
+/// @brief gets user input in a range of maximum length
+/// @param input char* that will hold the user input
+/// @param maxLength the maximum length of the input
+/// @param text text that will be printed before taking the input
+/// @return true if the process was successful and false if no
 bool getUserInput(char* input,size_t maxLength,const char* text)
 {
     if (text != NULL)
@@ -28,7 +33,12 @@ bool getUserInput(char* input,size_t maxLength,const char* text)
     free(temp);
     return true;
 }
-
+/// @brief creates a sub string from a index to index+length
+/// @param str the original string
+/// @param subStr where the sub string will be saved
+/// @param index the starting index of the sub string
+/// @param legnth the length of the substring
+/// @return true if the process was successful and false if no
 bool subString(char* str,char* subStr,int index,int legnth)
 {
     if ((index + legnth) > strlen(str))
@@ -50,6 +60,10 @@ bool subString(char* str,char* subStr,int index,int legnth)
     subStr[legnth] = '\0';
     return true;
 }
+/// @brief finds last occurrence of a char in a string
+/// @param str the string
+/// @param ch the char
+/// @return the index of the last occurrence(-1 if the char was not found)
 int findLast(char* str,char ch)
 {
     size_t length = strlen(str);
@@ -64,7 +78,11 @@ int findLast(char* str,char ch)
     }
     return position;
 }
-
+/// @brief creates a random string in a spesific length
+/// @param str where the string will be saved
+/// @param length the length of the random string
+/// @param seed the randomness seed
+/// @param nullTerminate should there be a '\0' or no
 void randomString(char* str, size_t length,unsigned int seed, bool nullTerminate)
 {
     const char charSet[] = ALPHBET;
@@ -86,6 +104,10 @@ void randomString(char* str, size_t length,unsigned int seed, bool nullTerminate
     }
     srand(time(NULL));
 }
+/// @brief converts string to binary data
+/// @param str the string 
+/// @param length the length of the string
+/// @return the binary data
 unsigned char* stringToBinary(char* str,size_t length)
 {
     if (str == NULL || length == 0)
@@ -103,6 +125,10 @@ unsigned char* stringToBinary(char* str,size_t length)
     memcpy(bytes, str,length);
     return bytes;
 }
+/// @brief converts binary data to string
+/// @param binary the binary data
+/// @param length the length of the binary data 
+/// @return the string
 char* binaryToString(unsigned char* binary,size_t length)
 {
     char* str = NULL;
@@ -121,6 +147,10 @@ char* binaryToString(unsigned char* binary,size_t length)
     str[length] = '\0'; 
     return str;
 }
+/// @brief combines two strings to create a full file-path
+/// @param str1 the first string
+/// @param str2 the second string
+/// @return the combined full path
 char* combinePath(char* str1,char* str2)
 {
     char* fullPath = NULL;
