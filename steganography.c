@@ -171,7 +171,6 @@ bool decodeLSB(unsigned char* src,unsigned char* dest,int startPos,int size)
 
 bool encodeMessage(FileObject* destFile,char* msg)
 {
-    FILE* fileToWrite = NULL;
     unsigned char* binaryMsg = NULL;
     size_t startingPos = findstartingPos(destFile->m_data,destFile->m_size,strlen(msg));
     if (startingPos == 0)
@@ -213,15 +212,12 @@ bool encodeMessage(FileObject* destFile,char* msg)
         free(binaryMsg);
         return false;
     }
-    fileToWrite = fopen(destFile->m_path,WRITE_BINARY);
-    if (fileToWrite == NULL)
+    if(!writeToImage(destFile->m_format,destFile->m_path,destFile->m_data,destFile->m_width,destFile->m_height,destFile->m_channels))
     {
-        LOG_ERROR("Could not open file for writing");
+        LOG_ERROR("Could not write to image");
         free(binaryMsg);
         return false;
     }
-    writeToImage(destFile->m_format,destFile->m_path,destFile->m_data,destFile->m_width,destFile->m_height,destFile->m_channels);
-    fclose(fileToWrite);
     free(binaryMsg);
     return true;
 }
@@ -290,30 +286,21 @@ bool encodeFile(FileObject* destFile,FileObject* file)
         free(header);
         return false;
     }
-    printf("%zu\n",destFile->m_size);
-    printf("%zu\n",file->m_size);
-    size_t newFileSize = destFile->m_size + file->m_size;
-    printf("%zu\n",newFileSize);
-    unsigned char* newFileData = (unsigned char*)malloc(newFileSize);
-    if (newFileData == NULL)
+    if(!writeToImage(destFile->m_format,destFile->m_path,destFile->m_data,destFile->m_width,destFile->m_height,destFile->m_channels))
     {
-        LOG_ERROR("Could not allocate memory for the new file data");
+        LOG_ERROR("Could not write new data to image");
         free(header);
         return false;
     }
-    memcpy(newFileData, destFile->m_data, destFile->m_size);
-    memcpy(newFileData + destFile->m_size, file->m_data, file->m_size);
-    fileToWrite = fopen(destFile->m_path,WRITE_BINARY);
-    if (fileToWrite == NULL)
+    FILE* out = fopen(destFile->m_path,APPEND_BINARY);
+    if (out == NULL)
     {
-        LOG_ERROR("Could not open file for writing");
+        LOG_ERROR("Could not open file in: %s",destFile->m_path);
         free(header);
         return false;
     }
-    writeToImage(destFile->m_format,destFile->m_path,newFileData,destFile->m_width,destFile->m_height,destFile->m_channels);
-    free(destFile->m_data);
-    destFile->m_data = newFileData;
-    destFile->m_size = newFileSize;
+    fwrite(file->m_data, 1, file->m_size, out);
+    fclose(out);
     free(header);
     fclose(fileToWrite);
     return true;
@@ -343,7 +330,8 @@ bool decodeFile(FileObject* srcFile,char* path)
     }
     free(magic);
     size_t fileSize = srcFile->m_size - header->m_startPos;
-    printf("%zu",fileSize);
+    printf("%zu\n",header->m_startPos);
+    printf("%zu",srcFile->m_size);
     fileData = (unsigned char*)malloc(fileSize);
     if (fileData == NULL)
     {
@@ -359,16 +347,16 @@ bool decodeFile(FileObject* srcFile,char* path)
         return false;
     }
     memcpy(fileData, srcFile->m_data + header->m_startPos, fileSize);
-    FILE* outFile = fopen(fullPath, WRITE_BINARY);
-    if (outFile == NULL)
+    FILE* out = fopen(fullPath,WRITE_BINARY);
+    if (out == NULL)
     {
-        LOG_ERROR("Could not create file in: %s",fullPath);
+        LOG_ERROR("Could not create new file in: %s",fullPath);
         free(header);
         free(fileData);
         return false;
     }
-    fwrite(fileData, 1, fileSize, outFile);
-    fclose(outFile);
+    fwrite(fileData, 1, fileSize, out);
+    fclose(out);
     free(header);
     free(fileData);
     return true;
@@ -394,7 +382,10 @@ void encode(FileObject* file)
             return;
         }
         getUserInput(text,MAX_TEXT_LENGTH,"Enter the text that you want to encode: ");
-        encodeMessage(file,text);
+        if(!encodeMessage(file,text))
+        {
+            LOG_ERROR("Could not encode message");
+        }
         free(text);
         break;
     case ENCODE_FILE:
@@ -412,7 +403,10 @@ void encode(FileObject* file)
             free(path);
             return;
         }
-        encodeFile(file,fileObject);
+        if(!encodeFile(file,fileObject))
+        {
+            LOG_ERROR("Could not encode file");
+        }
         free(path);
         freeFileObject(fileObject);
         break;

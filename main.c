@@ -24,12 +24,12 @@ int main(int argc,char** argv)
     char path3[] = "C:\\Users\\453D~1\\Desktop\\res";
     FileObject* object = createFileObject(path);
     FileObject* object2 = createFileObject(path2);
-    //decodeFile(object,path3);
+    decodeFile(object,path3);
     //encodeFile(object,object2);
     //encodeMessage(object,originalData);
-    char* decodedData = (char*)malloc(dataSize);
-    decodeMessage(object,&decodedData);
-    printf("Decoded Data: \n");
-    printData(decodedData, dataSize);
+    //char* decodedData = (char*)malloc(dataSize);
+    //decodeMessage(object,&decodedData);
+    //printf("Decoded Data: \n");
+    //printData(decodedData, dataSize);
     return 0;
 }
