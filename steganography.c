@@ -273,12 +273,14 @@ bool encodeMessage(FileObject* destFile,char* msg)
         LOG_ERROR("Could not create header for the encoding");
         return false;
     }
+    LOG_OKAY("Encoding header was created successfully");
     if(!insertHeader(destFile->m_data,header))
     {
         LOG_ERROR("Could not insert Header");
         free(header);
         return false;
     }
+    LOG_OKAY("Header was inserted successfully");
     free(header);
     binaryMsg = stringToBinary(msg,strlen(msg) + 1);
     if (binaryMsg == NULL)
@@ -292,12 +294,14 @@ bool encodeMessage(FileObject* destFile,char* msg)
         free(binaryMsg);
         return false;
     }
+    LOG_OKAY("LSB encoding was successfull");
     if(!writeToImage(destFile->m_format,destFile->m_path,destFile->m_data,destFile->m_width,destFile->m_height,destFile->m_channels))
     {
         LOG_ERROR("Could not write to image");
         free(binaryMsg);
         return false;
     }
+    LOG_OKAY("Wrote encoded data into the image");
     free(binaryMsg);
     return true;
 }
@@ -327,6 +331,7 @@ bool decodeMessage(FileObject* srcFile,char** msg)
         free(header);
         return false;
     }
+    LOG_OKAY("Found encoding header");
     free(magic);
     binaryMsg = (unsigned char*)malloc(header->m_textSize);
     if (binaryMsg == NULL)
@@ -342,6 +347,7 @@ bool decodeMessage(FileObject* srcFile,char** msg)
         free(binaryMsg);
         return false;
     }
+    LOG_OKAY("Decoded the LSB encoding successfully");
     *msg = binaryToString(binaryMsg,header->m_textSize);
     if (*msg == NULL)
     {
@@ -350,6 +356,7 @@ bool decodeMessage(FileObject* srcFile,char** msg)
         free(binaryMsg);
         return false;
     }
+    LOG_OKAY("Successfully converted the binary to a message");
     free(header);
     free(binaryMsg);
     return true;
@@ -387,6 +394,7 @@ bool encodeFile(FileObject* destFile,FileObject* file)
     fclose(in);
     fwrite(dataToEncode, 1, file->m_size, out);
     free(dataToEncode);
+    LOG_OKAY("Successfully wrote the file into the image");
     tail = createTail(destFile,file->m_format,destFile->m_size,file->m_size);
     if (tail == NULL)
     {
@@ -394,9 +402,11 @@ bool encodeFile(FileObject* destFile,FileObject* file)
         fclose(out);
         return false;
     }
+    LOG_OKAY("Successfully created the encoding tail");
     fwrite(tail, sizeof(Tail), 1, out);
     fclose(out);
     free(tail);
+    LOG_OKAY("Successfully wrote the tail into the image");
     return true;
 }
 /// @brief decodes a file that was hidden in the end of a image
@@ -444,6 +454,7 @@ bool decodeFile(FileObject* srcFile,char* path)
         free(magic);
         return false;
     }
+    LOG_OKAY("Successfully found the encoding tail");
     free(magic);
     decodedData = (unsigned char*)malloc(tail->m_size);
     if (decodedData == NULL)
@@ -460,6 +471,7 @@ bool decodeFile(FileObject* srcFile,char* path)
         free(fileData);
         return false;
     }
+    LOG_OKAY("Successfully created path for the encoded file");
     free(fileData);
     FILE* out = fopen(fullPath,WRITE_BINARY);
     if (out == NULL)
@@ -469,6 +481,7 @@ bool decodeFile(FileObject* srcFile,char* path)
         return false;
     }
     fwrite(decodedData,tail->m_size,1,out);
+    LOG_OKAY("Wrote the encoded file in: %s",fullPath);
     free(fullPath);
     fclose(out);
     free(decodedData);
